@@ -5,16 +5,15 @@ const argv = require("yargs").argv;
 const Sequelize = require("sequelize");
 global.Sequelize = Sequelize;
 
-
 async function loadConfig() {
-  var files = await fs.readdirSync("./config");
+  var files = await fs.readdirSync(Mukmin.getPath("config"));
   await loop(files, async file => {
     var fileNameSplit = file.split(".");
     if (fileNameSplit[1] === "config") {
       console.log("Load config " + fileNameSplit[0]);
       await global.Mukmin.registerConfig(
         fileNameSplit[0],
-        await require("../config/" + file)
+        await require(Mukmin.getPath("config/" + file))
       );
     }
   });
