@@ -1,50 +1,20 @@
 // https://gist.github.com/ibreathebsb/a104a9297d5df4c8ae944a4ed149bcf1
-var loader = require("../loader/index");
+// var loader = require("../loader/index");
+var httpConfig = Mukmin.getConfig("http");
+var routerConfig = Mukmin.getConfig("routers");
+var multerConfig = Mukmin.getConfig("multer");
 var pluginManager = require("../extension/index");
-var fs = require("fs");
 var loop = require("../lib/loop");
 var multer = require("multer");
 var express = require("express");
 var app = express();
-var AjvQuery = require("ajv");
-var AjvBody = require("ajv");
-var AjvParam = require("ajv");
-var upload = multer(loader.multer);
+var upload = multer(multerConfig);
 var handleAction = require("./handleAction").handleAction;
-const ajvBody = new AjvBody(loader.inputs.body_options);
-
-const ajvQuery = new AjvQuery(loader.inputs.query_options);
-
-/**
- * param akan khusus menggunakan coerceTypes yaitu mekanisme
- * untuk bisa mengubah struktur tipe  dalam pengecekan ajv
- * hal ini dilakukana karena param akan bernilai string semua
- */
-const ajvParams = new AjvParam(loader.inputs.params_options);
-
-loader.inputs.loadValidator(ajvBody, ajvQuery, ajvParams);
-
-// async function loadPlugin(app) {
-//   var dirs = fs.readdirSync("./plugins");
-//   await loop(dirs, async dir => {
-//     await global.Mukmin.registerBlade(
-//       dir,
-//       require("../../plugins/" + dir + "/index")
-//     );
-
-//     if (
-//       Mukmin["_" + dir].onAppBeforeStart !== null &&
-//       Mukmin["_" + dir].onAppBeforeStart !== undefined &&
-//       typeof Mukmin["_" + dir].onAppBeforeStart === "function"
-//     )
-//       await Mukmin["_" + dir].onAppBeforeStart(app);
-//   });
-// }
 
 module.exports.main = async function(arg) {
   await pluginManager.doOnWebBeforeLoad(Mukmin, arg, app);
   // await loadPlugin(app);
-  var routers_key_array = Object.keys(loader.routers);
+  var routers_key_array = Object.keys(routerConfig);
   await loop(routers_key_array, async routers_key => {
     var router_key_splited = routers_key.split(" ");
     var tmp = [];
@@ -60,9 +30,9 @@ module.exports.main = async function(arg) {
         handleAction(routers_key, req, res);
       });
     } else if (router_key_splited[0] === "POST") {
-      var schema = require("../../app/controllers/" +
-        loader.routers[routers_key].action +
-        ".controller");
+      var schema = require(Mukmin.getPath(
+        "app/controllers/" + routerConfig[routers_key].action + ".controller"
+      ));
       if (
         schema.inputs.files !== undefined &&
         schema.inputs.files !== {} &&
@@ -92,7 +62,7 @@ module.exports.main = async function(arg) {
                     "max count for array upload must set a number"
                   );
                 } else {
-                  return require("../../app/outputs/error/default")(
+                  return require(Mukmin.getPath("app/outputs/error/default"))(
                     res,
                     {
                       code: 503,
@@ -113,7 +83,7 @@ module.exports.main = async function(arg) {
                   '"type of file just single and array no more"'
                 );
               } else {
-                return require("../../app/outputs/error/default")(
+                return require(Mukmin.getPath("app/outputs/error/default"))(
                   res,
                   {
                     code: 503,
@@ -146,7 +116,7 @@ module.exports.main = async function(arg) {
       });
     }
   });
-  console.log("\r\nRunning in port " + loader.http.port);
+  console.log("\r\nRunning in port " + httpConfig.port);
   app.use(function(err, req, res, next) {
     var inputs = {};
     inputs["req"] = req;
@@ -155,7 +125,7 @@ module.exports.main = async function(arg) {
     inputs["params"] = req.params;
     var outputs = {};
     outputs["res"] = res;
-    require("../../app/event/onError.event")(inputs, outputs, err);
+    require(Mukmin.getPath("app/event/onError.event"))(inputs, outputs, err);
   });
-  app.listen(loader.http.port);
+  app.listen(httpConfig.port);
 };

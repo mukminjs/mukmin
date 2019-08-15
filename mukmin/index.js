@@ -1,13 +1,6 @@
 var path = require("path");
 module.exports.main = async function(root, arg) {
-  var env = arg.env;
   global["Mukmin"] = {};
-  if (env !== undefined) {
-    global.Mukmin["config"] = await require("../../config/env/" + env);
-  } else {
-    global.Mukmin["config"] = await require("../../config/env/default");
-  }
-
   global["db"] = {};
   global.Mukmin["config_I_♥_ﷲ_and_I_♥_ﷺﷴ"] = {};
   global.Mukmin["dataModel_I_♥_ﷲ_and_I_♥_ﷺﷴ"] = {};

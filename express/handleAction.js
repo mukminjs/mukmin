@@ -1,21 +1,22 @@
+var router = Mukmin.getConfig("routers");
+var inputConfig = Mukmin.getConfig("inputs");
 var loop = require("../lib/loop");
-var loader = require("../loader/index");
 var checkAuth = require("./checkAuth").checkAuth;
 var AjvQuery = require("ajv");
 var AjvBody = require("ajv");
 var AjvParam = require("ajv");
-const ajvBody = new AjvBody(loader.inputs.body_options);
+const ajvBody = new AjvBody(inputConfig.body_options);
 
-const ajvQuery = new AjvQuery(loader.inputs.query_options);
+const ajvQuery = new AjvQuery(inputConfig.query_options);
 
 /**
  * param akan khusus menggunakan coerceTypes yaitu mekanisme
  * untuk bisa mengubah struktur tipe  dalam pengecekan ajv
  * hal ini dilakukana karena param akan bernilai string semua
  */
-const ajvParams = new AjvParam(loader.inputs.params_options);
+const ajvParams = new AjvParam(inputConfig.params_options);
 
-loader.inputs.loadValidator(ajvBody, ajvQuery, ajvParams);
+inputConfig.loadValidator(ajvBody, ajvQuery, ajvParams);
 module.exports.handleAction = async function(routers_key, req, res) {
   //cek police to match with role access
 
@@ -26,9 +27,9 @@ module.exports.handleAction = async function(routers_key, req, res) {
   authSuccess = respondCheckAuth.success;
 
   // cek if use view engine direct
-  if (loader.routers[routers_key].view !== undefined) {
+  if (router[routers_key].view !== undefined) {
     // you must chose view or action not both
-    if (loader.routers[routers_key].action !== undefined) {
+    if (router[routers_key].action !== undefined) {
       throw new Error("error you must chose view or action not both");
     }
 
@@ -36,11 +37,11 @@ module.exports.handleAction = async function(routers_key, req, res) {
       throw new Error(authMessage);
     }
     console.log("in here");
-    res.render(loader.routers[routers_key].view);
+    res.render(router[routers_key].view);
   } else {
-    var schema = require("../../app/controllers/" +
-      loader.routers[routers_key].action +
-      ".controller");
+    var schema = require(Mukmin.getPath(
+      "app/controllers/" + router[routers_key].action + ".controller"
+    ));
 
     var inputs = {
       body: {},
@@ -68,7 +69,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
         return onError(inputs, outputs, authMessage);
       } else {
         try {
-          return require("../../app/outputs/error/default")(
+          return require(Mukmin.getPath("app/outputs/error/default"))(
             res,
             {
               code: 502,
@@ -100,7 +101,11 @@ module.exports.handleAction = async function(routers_key, req, res) {
           if (key.indexOf("__") > 0) {
             key = key.split("__")[0];
           }
-          return require("../../app/outputs/error/" + key)(res, options, data);
+          return require(Mukmin.getPath("app/outputs/error/" + key))(
+            res,
+            options,
+            data
+          );
         };
       }
     }
@@ -121,7 +126,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
           if (key.indexOf("__") > 0) {
             key = key.split("__")[0];
           }
-          return require("../../app/outputs/success/" + key)(
+          return require(Mukmin.getPath("app/outputs/success/" + key))(
             res,
             options,
             data
@@ -173,7 +178,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
         if (schema.onError !== undefined) {
           return schema.onError(inputs, outputs, validate.errors);
         } else {
-          return require("../../app/outputs/error/default")(
+          return require(Mukmin.getPath("app/outputs/error/default"))(
             res,
             {
               code: 500,
@@ -203,7 +208,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
         if (schema.onError !== undefined) {
           return schema.onError(inputs, outputs, validate.errors);
         } else {
-          return require("../../app/outputs/error/default")(
+          return require(Mukmin.getPath("app/outputs/error/default"))(
             res,
             {
               code: 501,
@@ -220,8 +225,6 @@ module.exports.handleAction = async function(routers_key, req, res) {
     } else {
       inputs.params = {};
     }
-    // console.log(JSON.stringify(req.params) + "req params");
-
     if (
       querySchema !== undefined &&
       querySchema !== {} &&
@@ -234,7 +237,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
         if (schema.onError !== undefined) {
           return schema.onError(inputs, outputs, validate.errors);
         } else {
-          return require("../../app/outputs/error/default")(
+          return require(Mukmin.getPath("app/outputs/error/default"))(
             res,
             {
               code: 502,
