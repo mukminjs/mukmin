@@ -72,7 +72,7 @@ module.exports.handleAction = async function(routers_key, req, res) {
           return require(Mukmin.getPath("app/outputs/error/default"))(
             res,
             {
-              code: 502,
+              code: 10,
               message: "authentication failure"
             },
             authMessage,
