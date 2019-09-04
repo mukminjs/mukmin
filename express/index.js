@@ -1,15 +1,16 @@
 // https://gist.github.com/ibreathebsb/a104a9297d5df4c8ae944a4ed149bcf1
-// var loader = require("../loader/index");
-var httpConfig = Mukmin.getConfig("http");
+var appConfig = Mukmin.getConfig("app");
 var routerConfig = Mukmin.getConfig("routers");
 var multerConfig = Mukmin.getConfig("multer");
 var pluginManager = require("../extension/index");
 var loop = require("../lib/loop");
 var multer = require("multer");
 var express = require("express");
+var https = require("https");
 var app = express();
 var upload = multer(multerConfig);
 var handleAction = require("./handleAction").handleAction;
+var fs = require("fs");
 
 module.exports.main = async function(arg) {
   await pluginManager.doOnWebBeforeLoad(Mukmin, arg, app);
@@ -116,7 +117,7 @@ module.exports.main = async function(arg) {
       });
     }
   });
-  console.log("\r\nRunning in port " + httpConfig.port);
+  console.log("\r\nRunning in port " + appConfig.port);
   app.use(function(err, req, res, next) {
     var inputs = {};
     inputs["req"] = req;
@@ -127,5 +128,18 @@ module.exports.main = async function(arg) {
     outputs["res"] = res;
     require(Mukmin.getPath("app/event/onError.event"))(inputs, outputs, err);
   });
-  app.listen(httpConfig.port);
+  if (appConfig.secure.status === "true") {
+    // we will pass our 'app' to 'https' server
+    https
+      .createServer(
+        {
+          key: fs.readFileSync(appConfig.secure.properties.key),
+          cert: fs.readFileSync(appConfig.secure.properties.cert)
+        },
+        app
+      )
+      .listen(appConfig.port);
+  } else {
+    app.listen(appConfig.port);
+  }
 };
