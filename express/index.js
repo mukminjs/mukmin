@@ -128,7 +128,7 @@ module.exports.main = async function(arg) {
     outputs["res"] = res;
     require(Mukmin.getPath("app/event/onError.event"))(inputs, outputs, err);
   });
-  if (appConfig.secure.status === true) {
+  if (appConfig.secure.status === "true") {
     // we will pass our 'app' to 'https' server
     https
       .createServer(
